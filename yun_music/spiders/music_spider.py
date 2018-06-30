@@ -14,11 +14,7 @@ class yun_music_spider(scrapy.Spider):
     base_url=""
     # 爬虫已爬去的次数
     crawl_times=0
-<<<<<<< HEAD
-    #
-=======
 
->>>>>>> origin/master
 
     def parse(self,response):
 
