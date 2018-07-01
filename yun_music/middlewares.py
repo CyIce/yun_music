@@ -6,6 +6,25 @@
 # https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
+from selenium import webdriver
+import selenium.webdriver.support.ui as ui
+from scrapy.http import HtmlResponse
+
+
+class MyMusicDownloaderMiddleware(object):
+
+    def __init__(self):
+        self.driver = webdriver.Chrome()  # 指定使用的浏览器
+
+    def process_request(self, request, spider):
+        if spider.name == "music_spider":
+            self.driver.get(request.url)
+            self.driver.switch_to.frame("contentFrame")
+            body = self.driver.page_source
+            return HtmlResponse(self.driver.current_url, body=body, encoding='utf-8', request=request)
+        else:
+            return
+
 
 
 class YunMusicSpiderMiddleware(object):
