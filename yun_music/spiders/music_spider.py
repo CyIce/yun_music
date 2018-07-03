@@ -4,6 +4,8 @@ from selenium import webdriver
 from scrapy.xlib.pydispatch import dispatcher
 from scrapy import signals
 from pyvirtualdisplay import Display
+
+
 class yun_music_spider(scrapy.Spider):
     # 爬虫名称
     name = "music_spider"
@@ -17,16 +19,16 @@ class yun_music_spider(scrapy.Spider):
     crawl_times = 0
 
     def __init__(self):
-        self.browser = webdriver.PhantomJS()  # 指定使用的浏览器
+        self.browser = webdriver.Chrome()  # 指定使用的浏览器
         dispatcher.connect(self.spider_closed, signals.spider_closed)
 
     def parse(self, response):
 
-        #singer_type = [1001, 1002, 1003, 2001, 2002, 2003, 4001, 4002, 4003, 6001, 6002, 6003, 7001, 7002, 7003]
+        # singer_type = [1001, 1002, 1003, 2001, 2002, 2003, 4001, 4002, 4003, 6001, 6002, 6003, 7001, 7002, 7003]
         # singer_cha = [0, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,89, 90]
 
-        singer_type=[1001]
-        singer_cha=[65]
+        singer_type = [1001]
+        singer_cha = [65]
 
         for i in singer_type:
             for j in singer_cha:
@@ -42,14 +44,23 @@ class yun_music_spider(scrapy.Spider):
 
         for singer_home in singer_homes:
             short_url = singer_home.xpath("./@href").extract()[0]
-            singer_home_url = self.base_url + short_url
-            self.crawl_times+=1
-            if self.crawl_times<=2:
-                yield scrapy.Request(url=singer_home_url, callback=self.parse_singer, dont_filter=True)
+            short_url = short_url.replace("artist", "artist/album")
+            # 歌手专辑页面的URL
+            singer_album_url = self.base_url + short_url
+            self.crawl_times += 1
+            if self.crawl_times <= 1:
+                yield scrapy.Request(url=singer_album_url, callback=self.parse_album, dont_filter=True)
 
-    def parse_singer(self, response):
-        print(response.url)
-        pass
+    # 爬取歌手的专辑的url
+    def parse_album(self, response):
+
+        album_list = response.xpath("//html/body/div/div/div/div/ul[@class='m-cvrlst m-cvrlst-alb4 f-cb']/li")
+        for album in album_list:
+            short_url = album.xpath("//div/a[@href").extract()
+            print(short_url)
+            album_url = self.base_url + short_url
+            print(album_url)
+            yield scrapy.Request(url=album_url, callback=self.parse_song, dont_filter=True)
 
     def parse_song(self, response):
         pass
