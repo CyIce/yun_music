@@ -42,6 +42,9 @@ class SongItem(scrapy.Item):
     song_photo = scrapy.Field()
     # 歌曲的id
     song_id= scrapy.Field()
+    # 歌曲的专辑
+    song_album=scrapy.Field()
+
 
 
 
