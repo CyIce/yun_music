@@ -28,6 +28,9 @@ class SingerItem(scrapy.Item):
     # 歌手界面的url
     singer_url=scrapy.Field()
 
+
+
+
 class SongItem(scrapy.Item):
     # 歌曲的信息
     # 歌曲的名称
