@@ -40,8 +40,8 @@ class SongItem(scrapy.Item):
     song_fire = scrapy.Field()
     # 歌曲封面
     song_photo = scrapy.Field()
-    # 歌曲的url
-    song_url= scrapy.Field()
+    # 歌曲的id
+    song_id= scrapy.Field()
 
 
 

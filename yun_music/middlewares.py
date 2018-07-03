@@ -7,7 +7,6 @@
 
 from scrapy import signals
 from selenium import webdriver
-import selenium.webdriver.support.ui as ui
 from scrapy.http import HtmlResponse
 
 
