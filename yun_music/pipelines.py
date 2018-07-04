@@ -13,9 +13,9 @@ from yun_music.items import SingerItem, AlbumItem, SongItem
 class YunMusicPipeline(object):
 
     def __init__(self):
-        self.fsong = open("song.json", "wb")
-        self.falbum = open("album.json", "wb")
-        self.fsinger=open("singer.json","wb")
+        self.fsong = open("./data/song.json", "wb")
+        self.falbum = open("./data/album.json", "wb")
+        self.fsinger=open("./data/singer.json","wb")
         self.fsong.write("[".encode("utf-8"))
         self.falbum.write("[".encode("utf-8"))
         self.fsinger.write("[".encode("utf-8"))
