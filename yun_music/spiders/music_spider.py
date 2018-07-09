@@ -13,7 +13,7 @@ class yun_music_spider(scrapy.Spider):
     # 爬虫的允许域范围
     allowed_domains = ['music.163.com']
     # 爬虫起始url
-    start_urls = ['https://music.163.com/#/discover/artist/cat?id=1001&initial=65']
+    start_urls = ['https://music.163.com/#/discover/artist/cat?id=1001']
     # 基础url，用于拼接url
     base_url = "https://music.163.com/#"
     # 爬虫已爬取的次数
@@ -21,6 +21,7 @@ class yun_music_spider(scrapy.Spider):
     crawl_album_times = 0
     crawl_song_times = 0
     crawl_lyric_times = 0
+    times = 0
 
     def __init__(self):
         #
@@ -31,25 +32,27 @@ class yun_music_spider(scrapy.Spider):
 
     def parse(self, response):
 
-        # singer_type = [1001, 1002, 1003, 2001, 2002, 2003, 4001, 4002, 4003, 6001, 6002, 6003, 7001, 7002, 7003]
-        # singer_cha = [0, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,89, 90]
+        yield scrapy.Request(url=response.url, callback=self.parse_singer_list, dont_filter=True)
 
-        singer_type = [1001]
-        singer_cha = [65]
+        # yield scrapy.Request(url=response.url, callback=self.parse_singer_list, dont_filter=True)
 
-        for i in singer_type:
-            for j in singer_cha:
-                singer_list_url = "https://music.163.com/#/discover/artist/cat?id=%d&initial=%d" % (i, j)
-                #yield scrapy.Request(url=singer_list_url, callback=self.parse_singer_list, dont_filter=True)
-                yield scrapy.Request(url="https://music.163.com/#/discover/artist/cat?id=1001", callback=self.parse_singer_list, dont_filter=True)
+        # singer_type = [1003, 1002]
+        # , 2001, 2002, 2003, 4001, 4002, 4003, 6001, 6002, 6003, 7001, 7002, 7003]
+        # singer_cha = [80, 81, 82, 83, 84, 85, 86]
+        # [0, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,89, 90]
 
-        # yield scrapy.Request("https://music.163.com/#/discover/artist/cat?id=1001&initial=66", callback=self.parse)
+        # singer_type = [1001]
+        # singer_cha = [65]
+
+        #for i in singer_type:
+            # singer_list_url = "https://music.163.com/#/discover/artist/cat?id=%d&initial=%d" % (i, j)
+            #singer_list_url = "https://music.163.com/#/discover/artist/cat?id=%d" % i
+           # print (singer_list_url)
+            # yield scrapy.Request(url=singer_list_url, callback=self.parse_singer_list, dont_filter=True)
 
     def parse_singer_list(self, response):
-
         # 歌手主页列表
         singer_homes = response.xpath("//a[starts-with(@href,'/artist?id=')]")
-
         for singer_home in singer_homes:
             short_url = singer_home.xpath("./@href").extract()[0]
             short_url_album = short_url.replace("artist", "artist/album")
@@ -57,17 +60,14 @@ class yun_music_spider(scrapy.Spider):
             # 歌手专辑页面的URL
             singer_album_url = self.base_url + short_url_album
             singer_brief = self.base_url + short_url_singer
-            self.crawl_times += 1
-            if self.crawl_times<=1:
-                yield scrapy.Request(url=singer_album_url, callback=self.parse_album, dont_filter=True)
-                yield scrapy.Request(url=singer_brief, callback=self.parse_singer, dont_filter=True)
+            self.crawl_times+=1
 
+            yield scrapy.Request(url=singer_album_url, callback=self.parse_album, dont_filter=True)
+            yield scrapy.Request(url=singer_brief, callback=self.parse_singer, dont_filter=True)
 
     # 爬取歌手信息
     def parse_singer(self, response):
-
         singer_item = SingerItem()
-
         node = response.xpath("/html/body/div/div/div/div/div")
         # 歌手名字
         singer_name = node.xpath("./div/h2/text()").extract()[0]
@@ -75,10 +75,17 @@ class yun_music_spider(scrapy.Spider):
         singer_photo = node.xpath("./img/@src").extract()[0]
         # 歌曲简介
         singer_introduction = node.xpath("./div/p/text()").extract()[0]
+        # 专辑数量
+        song_count=node.xpath("./div/p[@class='z-indent']")[0].xpath("./br")
+        print (song_count)
+
+        b
 
         singer_item['singer_name'] = singer_name
         singer_item['singer_photo'] = singer_photo
         singer_item['singer_introduction'] = singer_introduction
+
+        print(singer_name)
 
         yield singer_item
 
@@ -88,6 +95,7 @@ class yun_music_spider(scrapy.Spider):
         album_list = response.xpath("/html/body/div/div/div/div/ul[@id='m-song-module']/li")
 
         for album in album_list:
+
             short_url = album.xpath("./div/a/@href").extract()[0]
             album_url = self.base_url + short_url
             self.crawl_album_times += 1
@@ -101,6 +109,7 @@ class yun_music_spider(scrapy.Spider):
 
     # 解析歌曲信息
     def parse_song(self, response):
+
         album_item = AlbumItem()
 
         album_info = response.xpath("//div[@class='cnt']/div[@class='cntc']/div[@class='topblk']")
@@ -137,14 +146,12 @@ class yun_music_spider(scrapy.Spider):
 
             ret = {'song_id': song_id, "song_name": song_name, "song_singer": singer, "punish_time": punish_time,
                    "song_album": album_name, "song_photo": album_photo}
+
             yield scrapy.Request(url=lyric_url, meta=ret, callback=self.parse_lyric,
                                  dont_filter=True)
 
     # 解析歌词
     def parse_lyric(self, response):
-
-        print(response.url)
-
         song_item = SongItem()
 
         lyric = response.xpath("/html/body/text()").extract()[0]

@@ -16,9 +16,9 @@ class YunMusicPipeline(object):
         self.fsong = open("./data/song.json", "wb")
         self.falbum = open("./data/album.json", "wb")
         self.fsinger=open("./data/singer.json","wb")
-        self.fsong.write("[".encode("utf-8"))
-        self.falbum.write("[".encode("utf-8"))
-        self.fsinger.write("[".encode("utf-8"))
+        #self.fsong.write("[".encode("utf-8"))
+        #self.falbum.write("[".encode("utf-8"))
+        #self.fsinger.write("[".encode("utf-8"))
 
 
     def process_item(self, item, spider):
@@ -39,6 +39,7 @@ class YunMusicPipeline(object):
         return item
 
     def close_spider(self, spider):
+        '''
         self.fsong.write("{}".encode("utf-8"))
         self.fsong.write("]".encode("utf-8"))
 
@@ -47,7 +48,7 @@ class YunMusicPipeline(object):
 
         self.falbum.write("{}".encode("utf-8"))
         self.falbum.write("]".encode("utf-8"))
-
+        '''
         self.fsong.close()
         self.falbum.close()
         self.fsinger.close()

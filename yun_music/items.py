@@ -52,3 +52,5 @@ class AlbumItem(scrapy.Item):
     album_introduction = scrapy.Field()
     # 歌手
     album_singer = scrapy.Field()
+    #
+    song_count=scrapy.Field()
