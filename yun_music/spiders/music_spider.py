@@ -44,11 +44,11 @@ class yun_music_spider(scrapy.Spider):
         # singer_type = [1001]
         # singer_cha = [65]
 
-        #for i in singer_type:
-            # singer_list_url = "https://music.163.com/#/discover/artist/cat?id=%d&initial=%d" % (i, j)
-            #singer_list_url = "https://music.163.com/#/discover/artist/cat?id=%d" % i
-           # print (singer_list_url)
-            # yield scrapy.Request(url=singer_list_url, callback=self.parse_singer_list, dont_filter=True)
+        # for i in singer_type:
+        # singer_list_url = "https://music.163.com/#/discover/artist/cat?id=%d&initial=%d" % (i, j)
+        # singer_list_url = "https://music.163.com/#/discover/artist/cat?id=%d" % i
+        # print (singer_list_url)
+        # yield scrapy.Request(url=singer_list_url, callback=self.parse_singer_list, dont_filter=True)
 
     def parse_singer_list(self, response):
         # 歌手主页列表
@@ -60,10 +60,13 @@ class yun_music_spider(scrapy.Spider):
             # 歌手专辑页面的URL
             singer_album_url = self.base_url + short_url_album
             singer_brief = self.base_url + short_url_singer
+            count = 0
             self.crawl_times+=1
+            if self.crawl_times>20:
+                break
 
-            yield scrapy.Request(url=singer_album_url, callback=self.parse_album, dont_filter=True)
-            yield scrapy.Request(url=singer_brief, callback=self.parse_singer, dont_filter=True)
+            yield scrapy.Request(url=singer_album_url, meta={"singer_brief": singer_brief, "count": count},
+                                 callback=self.parse_album, dont_filter=True)
 
     # 爬取歌手信息
     def parse_singer(self, response):
@@ -75,17 +78,11 @@ class yun_music_spider(scrapy.Spider):
         singer_photo = node.xpath("./img/@src").extract()[0]
         # 歌曲简介
         singer_introduction = node.xpath("./div/p/text()").extract()[0]
-        # 专辑数量
-        song_count=node.xpath("./div/p[@class='z-indent']")[0].xpath("./br")
-        print (song_count)
-
-        b
 
         singer_item['singer_name'] = singer_name
         singer_item['singer_photo'] = singer_photo
         singer_item['singer_introduction'] = singer_introduction
-
-        print(singer_name)
+        singer_item['album_count']=response.meta["count"]
 
         yield singer_item
 
@@ -95,17 +92,23 @@ class yun_music_spider(scrapy.Spider):
         album_list = response.xpath("/html/body/div/div/div/div/ul[@id='m-song-module']/li")
 
         for album in album_list:
-
             short_url = album.xpath("./div/a/@href").extract()[0]
             album_url = self.base_url + short_url
-            self.crawl_album_times += 1
+            response.meta["count"] += 1
             yield scrapy.Request(url=album_url, callback=self.parse_song, dont_filter=True)
 
         next_page = response.xpath("//div/div/a[@class='zbtn znxt']/@href")
         if next_page != []:
             next_page = next_page.extract()[0]
             next_page = self.base_url + next_page
-            yield scrapy.Request(url=next_page, callback=self.parse_album, dont_filter=True)
+            yield scrapy.Request(url=next_page,
+                                 meta={"singer_brief": response.meta["singer_brief"], "count": response.meta["count"]},
+                                 callback=self.parse_album, dont_filter=True)
+
+        else:
+
+            yield scrapy.Request(url=response.meta["singer_brief"], meta={"count": response.meta["count"]},
+                                 callback=self.parse_singer, dont_filter=True)
 
     # 解析歌曲信息
     def parse_song(self, response):
@@ -135,6 +138,8 @@ class yun_music_spider(scrapy.Spider):
         album_item['album_photo'] = album_photo
         album_item['album_introduction'] = album_introduction
         album_item['album_singer'] = singer
+        album_item['publish_time']=punish_time
+        album_item['song_count']=len(song_list)
 
         yield album_item
 
@@ -144,7 +149,7 @@ class yun_music_spider(scrapy.Spider):
             song_name = song_info.xpath("./td[2]/div/div/div/span/a/b/@title").extract()[0]
             lyric_url = "https:/music.163.com/#/api/song/lyric?id={}&lv=1&kv=1&tv=1".format(song_id)
 
-            ret = {'song_id': song_id, "song_name": song_name, "song_singer": singer, "punish_time": punish_time,
+            ret = {'song_url': song_id, "song_name": song_name, "song_singer": singer, "punish_time": punish_time,
                    "song_album": album_name, "song_photo": album_photo}
 
             yield scrapy.Request(url=lyric_url, meta=ret, callback=self.parse_lyric,

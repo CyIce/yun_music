@@ -34,8 +34,8 @@ class SongItem(scrapy.Item):
     song_fire = scrapy.Field()
     # 歌曲封面
     song_photo = scrapy.Field()
-    # 歌曲的id
-    song_id = scrapy.Field()
+    # 歌曲的url
+    song_url = scrapy.Field()
     # 歌曲的专辑
     song_album = scrapy.Field()
     # 歌词
@@ -52,5 +52,7 @@ class AlbumItem(scrapy.Item):
     album_introduction = scrapy.Field()
     # 歌手
     album_singer = scrapy.Field()
-    #
+    # 专辑的歌曲数目
     song_count=scrapy.Field()
+    # 专辑发布时间
+    publish_time=scrapy.Field()
